@@ -1,73 +1,33 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#10131b">
-  <title>ClipForge AI — Free VOD Clipper</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#10131b">
+  <title>ClipForge AI — Free VOD Clipper</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><span class="logo">✦</span><span>ClipForge <b>AI</b></span></div>
-    <span class="free-pill">FREE • LOCAL PROCESSING</span>
-  </header>
-
-  <main>
-    <section class="hero">
-      <p class="eyebrow">YOUR MOMENTS. YOUR EDIT.</p>
-      <h1>Turn long videos into<br><span>shareable moments.</span></h1>
-      <p class="sub">A free-first clip editor that works with video files on your device. No account or paid API required.</p>
-    </section>
-
-    <section class="panel">
-      <div class="section-head"><div><span class="step">01</span><h2>Choose a video</h2></div><span class="muted">MP4 / WebM / supported browser formats</span></div>
-      <label class="dropzone" for="videoFile" id="dropzone">
-        <span class="upload-icon">↑</span>
-        <strong>Tap to select a video</strong>
-        <span class="muted">Choose a VOD or recording stored on your phone</span>
-        <input id="videoFile" type="file" accept="video/*">
-      </label>
-      <p class="notice">Use recordings you own or have permission to edit. This first version does not download videos from YouTube or Twitch links.</p>
-    </section>
-
-    <section class="panel" id="editorPanel">
-      <div class="section-head"><div><span class="step">02</span><h2>Find your clip</h2></div><span class="muted" id="videoMeta">No video loaded</span></div>
-      <div class="preview-wrap">
-        <video id="preview" controls playsinline></video>
-        <div class="empty-preview" id="emptyPreview"><span>▶</span><p>Your video preview will appear here</p></div>
-      </div>
-      <div class="time-grid">
-        <label>Start time (seconds)<input id="startTime" type="number" min="0" step="0.1" value="0"></label>
-        <label>End time (seconds)<input id="endTime" type="number" min="0" step="0.1" value="15"></label>
-      </div>
-      <div class="range-row"><input id="startRange" type="range" min="0" max="15" step="0.1" value="0"><input id="endRange" type="range" min="0" max="15" step="0.1" value="15"></div>
-      <div class="quick-actions">
-        <button class="secondary" id="setStart">Set start to current time</button>
-        <button class="secondary" id="setEnd">Set end to current time</button>
-      </div>
-      <div class="section-head subhead"><div><span class="step">03</span><h2>Clip style</h2></div></div>
-      <div class="options-grid">
-        <label>Layout<select id="layout"><option value="portrait">Vertical 9:16 (Shorts / Reels / TikTok)</option><option value="original">Keep original shape</option></select></label>
-        <label>Caption text<input id="caption" type="text" maxlength="120" placeholder="Add a short caption (optional)"></label>
-      </div>
-      <p class="notice">This starter exports a WebM video using your browser. MP4 conversion and automatic AI highlight detection are planned next; they are not included in this first build.</p>
-      <button class="primary" id="exportBtn" disabled>Export selected clip</button>
-      <p id="status" class="status" aria-live="polite">Choose a video to begin.</p>
-      <a id="downloadLink" class="download hidden" download="clipforge-clip.webm">Download your clip</a>
-    </section>
-
-    <section class="panel roadmap">
-      <div class="section-head"><div><span class="step">04</span><h2>Coming next</h2></div></div>
-      <ul>
-        <li>Automatic highlight suggestions from audio and scene changes</li>
-        <li>Speech-to-text captions and editable subtitle timing</li>
-        <li>Clip scoring, titles, descriptions and hashtags</li>
-        <li>MP4 export when a compatible local encoder is available</li>
-      </ul>
-    </section>
-  </main>
-  <footer>ClipForge AI · Free-first, privacy-friendly editing · Files stay on your device during editing</footer>
-  <script src="app.js"></script>
-</body>
-</html>
+<header class="topbar"><div class="brand"><span class="logo">✦</span><span>ClipForge <b>AI</b></span></div><span class="free-pill">FREE • LOCAL PROCESSING</span></header>
+<main>
+<section class="hero"><p class="eyebrow">YOUR MOMENTS. YOUR EDIT.</p><h1>Turn long videos into<br><span>shareable moments.</span></h1><p class="sub">A free-first clip editor for creator-authorized videos. No account or paid API required.</p></section>
+<section class="panel" id="linkImportPanel">
+ <div class="section-head"><div><span class="step">01</span><h2>Import a YouTube / Twitch link</h2></div><span class="muted">Link preview</span></div>
+ <label for="videoUrl">Paste a YouTube video, Twitch VOD or Twitch clip link</label>
+ <input id="videoUrl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=...">
+ <div class="import-actions"><button class="primary" id="previewLinkBtn" type="button">Preview link</button><button class="secondary" id="clearLinkBtn" type="button">Clear</button></div>
+ <div id="linkStatus" class="status" aria-live="polite">Paste a supported link to preview it here.</div>
+ <div id="embedWrap" class="embed-wrap hidden"><iframe id="videoEmbed" title="Video preview" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+ <div id="linkNextStep" class="link-next hidden"><strong>Preview only — not a downloadable source.</strong><p>To make clips, use a video file you own or have permission to edit. Download it through the creator's authorized source or platform tools, then select it below. This app does not bypass YouTube or Twitch restrictions.</p><button class="secondary" id="goToUploadBtn" type="button">Choose an authorized video file</button></div>
+ <p class="notice">YouTube/Twitch embeds are for preview only. GitHub Pages cannot fetch arbitrary VOD media or run long video-processing jobs by itself.</p>
+</section>
+<section class="panel"><div class="section-head"><div><span class="step">02</span><h2>Choose an authorized video file</h2></div><span class="muted">MP4 / WebM / supported formats</span></div>
+<label class="dropzone" for="videoFile" id="dropzone"><span class="upload-icon">↑</span><strong>Tap to select a video</strong><span class="muted">Choose a VOD or recording stored on your phone</span><input id="videoFile" type="file" accept="video/*"></label><p class="notice">Use recordings you own or have permission to edit.</p></section>
+<section class="panel" id="editorPanel"><div class="section-head"><div><span class="step">03</span><h2>Choose your clip</h2></div><span class="muted" id="videoMeta">No video loaded</span></div>
+<div class="preview-wrap"><video id="preview" controls playsinline></video><div class="empty-preview" id="emptyPreview"><span>▶</span><p>Your uploaded video preview appears here</p></div></div>
+<div class="time-grid"><label>Start time (seconds)<input id="startTime" type="number" min="0" step="0.1" value="0"></label><label>End time (seconds)<input id="endTime" type="number" min="0" step="0.1" value="15"></label></div>
+<div class="range-row"><input id="startRange" type="range" min="0" max="15" step="0.1" value="0"><input id="endRange" type="range" min="0" max="15" step="0.1" value="15"></div>
+<div class="quick-actions"><button class="secondary" id="setStart">Set start to current time</button><button class="secondary" id="setEnd">Set end to current time</button></div>
+<div class="section-head subhead"><div><span class="step">04</span><h2>Clip style</h2></div></div><div class="options-grid"><label>Layout<select id="layout"><option value="portrait">Vertical 9:16 (Shorts / Reels / TikTok)</option><option value="original">Keep original shape</option></select></label><label>Caption text<input id="caption" type="text" maxlength="120" placeholder="Add a short caption (optional)"></label></div>
+<p class="notice">This browser starter exports WebM locally. Automatic AI highlight detection, synchronized speech captions and MP4 conversion are not included yet.</p><button class="primary" id="exportBtn" disabled>Export selected clip</button><p id="status" class="status" aria-live="polite">Choose a video to begin.</p><a id="downloadLink" class="download hidden" download="clipforge-clip.webm">Download your clip</a></section>
+<section class="panel roadmap"><div class="section-head"><div><span class="step">05</span><h2>Next upgrades</h2></div></div><ul><li>Authorized VOD ingestion backend</li><li>Full VOD or selected-section analysis</li><li>Automatic highlight detection and clip ranking</li><li>Speech-to-text captions with timing</li><li>MP4 export and mobile-friendly downloads</li></ul></section>
+</main><footer>ClipForge AI · Free-first editing · Your local video stays in your browser during editing</footer>
+<script src="link-import.js"></script><script src="app.js"></script>
+</body></html>
