@@ -1,129 +1,21 @@
 (() => {
-  const $ = (id) => document.getElementById(id);
-  const fileInput = $("videoFile"), video = $("preview"), empty = $("emptyPreview");
-  const start = $("startTime"), end = $("endTime"), startRange = $("startRange"), endRange = $("endRange");
-  const status = $("status"), exportBtn = $("exportBtn"), download = $("downloadLink");
-  let sourceUrl = null, exportUrl = null, recording = false;
-
-  function say(message) { status.textContent = message; }
-  function clampTimes() {
-    const duration = Number.isFinite(video.duration) ? video.duration : 0;
-    let a = Math.max(0, Math.min(Number(start.value) || 0, duration));
-    let b = Math.max(0, Math.min(Number(end.value) || 0, duration));
-    if (b <= a) b = Math.min(duration, a + 0.5);
-    start.value = a.toFixed(1); end.value = b.toFixed(1);
-    startRange.value = a; endRange.value = b;
-  }
-  function syncRange() { start.value = startRange.value; end.value = endRange.value; clampTimes(); }
-  start.addEventListener("change", clampTimes); end.addEventListener("change", clampTimes);
-  startRange.addEventListener("input", syncRange); endRange.addEventListener("input", syncRange);
-
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files && fileInput.files[0];
-    if (!file) return;
-    if (!file.type.startsWith("video/")) { say("Please choose a video file."); return; }
-    if (sourceUrl) URL.revokeObjectURL(sourceUrl);
-    sourceUrl = URL.createObjectURL(file);
-    video.src = sourceUrl;
-    video.load();
-    $("videoMeta").textContent = file.name;
-    empty.classList.add("hidden");
-    say("Video loaded. Scrub to a moment, then set the start and end.");
-  });
-  video.addEventListener("loadedmetadata", () => {
-    const d = video.duration || 15;
-    start.value = "0"; end.value = Math.min(15, d).toFixed(1);
-    [startRange, endRange].forEach(r => r.max = d);
-    endRange.value = end.value;
-    exportBtn.disabled = false;
-    clampTimes();
-  });
-  $("setStart").addEventListener("click", () => { start.value = video.currentTime.toFixed(1); clampTimes(); });
-  $("setEnd").addEventListener("click", () => { end.value = video.currentTime.toFixed(1); clampTimes(); });
-
-  function canvasStreamForVideo(layout, caption) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const portrait = layout === "portrait";
-    canvas.width = portrait ? 720 : (video.videoWidth || 1280);
-    canvas.height = portrait ? 1280 : (video.videoHeight || 720);
-    let raf;
-    const draw = () => {
-      if (!recording) return;
-      const vw = video.videoWidth || 16, vh = video.videoHeight || 9;
-      const targetRatio = canvas.width / canvas.height, sourceRatio = vw / vh;
-      let sx=0, sy=0, sw=vw, sh=vh;
-      if (sourceRatio > targetRatio) { sw = vh * targetRatio; sx = (vw-sw)/2; }
-      else { sh = vw / targetRatio; sy = (vh-sh)/2; }
-      ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width,canvas.height);
-      try { ctx.drawImage(video,sx,sy,sw,sh,0,0,canvas.width,canvas.height); } catch(e) {}
-      if (caption) {
-        const fontSize = Math.max(26, Math.round(canvas.width * 0.055));
-        ctx.font = `800 ${fontSize}px system-ui, sans-serif`;
-        ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-        ctx.lineWidth = Math.max(4,fontSize*.16); ctx.strokeStyle = "#111";
-        ctx.fillStyle = "#fff";
-        const maxWidth = canvas.width * .88;
-        const words = caption.split(/\s+/); let lines=[], line="";
-        for (const word of words) {
-          const test = line ? line+" "+word : word;
-          if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line=word; } else line=test;
-        }
-        if (line) lines.push(line);
-        lines.slice(-3).forEach((t,i,arr) => {
-          const y = canvas.height - canvas.height*.08 - (arr.length-1-i)*fontSize*1.25;
-          ctx.strokeText(t,canvas.width/2,y); ctx.fillText(t,canvas.width/2,y);
-        });
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    recording = true; draw();
-    return {stream:canvas.captureStream(30), stop:()=>{recording=false;cancelAnimationFrame(raf);}};
-  }
-
-  exportBtn.addEventListener("click", async () => {
-    if (!video.src || recording) return;
-    const a = Number(start.value), b = Number(end.value);
-    if (!(b > a) || b-a > 180) { say("Choose a valid clip up to 3 minutes for this mobile starter."); return; }
-    if (!window.MediaRecorder) { say("This browser does not support local recording. Try a recent Chrome browser."); return; }
-    const layout = $("layout").value, caption = $("caption").value.trim();
-    const rendered = canvasStreamForVideo(layout, caption);
-    const audioStream = video.captureStream ? video.captureStream() : (video.mozCaptureStream ? video.mozCaptureStream() : null);
-    if (audioStream) audioStream.getAudioTracks().forEach(t => rendered.stream.addTrack(t));
-    const mime = ["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find(t => MediaRecorder.isTypeSupported(t)) || "";
-    let recorder;
-    try { recorder = new MediaRecorder(rendered.stream, mime ? {mimeType:mime} : undefined); }
-    catch(e) { rendered.stop(); say("This browser could not start video export."); return; }
-    const chunks = [];
-    recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-    recorder.onerror = () => { rendered.stop(); say("Export failed. Try a shorter clip or another browser."); };
-    recorder.onstop = () => {
-      rendered.stop();
-      if (exportUrl) URL.revokeObjectURL(exportUrl);
-      const blob = new Blob(chunks,{type:recorder.mimeType || "video/webm"});
-      exportUrl = URL.createObjectURL(blob);
-      download.href = exportUrl; download.classList.remove("hidden");
-      download.textContent = `Download clip (${(blob.size/1024/1024).toFixed(1)} MB)`;
-      exportBtn.disabled = false; exportBtn.textContent = "Export selected clip";
-      say("Export ready. Your clip was processed in this browser.");
-    };
-    exportBtn.disabled = true; exportBtn.textContent = "Exporting…";
-    download.classList.add("hidden"); say("Recording clip locally… keep this tab open.");
-    video.pause(); video.currentTime = a;
-    await new Promise(resolve => { const done=()=>{video.removeEventListener("seeked",done);resolve();}; video.addEventListener("seeked",done); });
-    recorder.start(250);
-    await video.play();
-    const stopAt = () => {
-      if (video.currentTime >= b || video.ended) {
-        video.pause(); video.removeEventListener("timeupdate",stopAt);
-        if (recorder.state !== "inactive") recorder.stop();
-      }
-    };
-    video.addEventListener("timeupdate",stopAt);
-    video.addEventListener("ended",stopAt,{once:true});
-  });
-  window.addEventListener("beforeunload", () => {
-    if (sourceUrl) URL.revokeObjectURL(sourceUrl);
-    if (exportUrl) URL.revokeObjectURL(exportUrl);
-  });
+ const $=id=>document.getElementById(id), fileInput=$("videoFile"), video=$("preview"), empty=$("emptyPreview");
+ const start=$("startTime"),end=$("endTime"),sr=$("startRange"),er=$("endRange"),status=$("status"),exportBtn=$("exportBtn"),download=$("downloadLink");
+ let sourceUrl=null,exportUrl=null,recording=false,subtitleCues=[],audioContext=null;
+ const say=m=>status.textContent=m, fmt=t=>{t=Math.max(0,t);return `${Math.floor(t/60)}:${(t%60).toFixed(1).padStart(4,"0")}`};
+ function clampTimes(){const d=Number.isFinite(video.duration)?video.duration:0;let a=Math.max(0,Math.min(Number(start.value)||0,d)),b=Math.max(0,Math.min(Number(end.value)||0,d));if(b<=a)b=Math.min(d,a+.5);start.value=a.toFixed(1);end.value=b.toFixed(1);sr.value=a;er.value=b;}
+ function syncRange(){start.value=sr.value;end.value=er.value;clampTimes();}
+ start.addEventListener("change",clampTimes);end.addEventListener("change",clampTimes);sr.addEventListener("input",syncRange);er.addEventListener("input",syncRange);
+ fileInput.addEventListener("change",()=>{const f=fileInput.files?.[0];if(!f)return;if(!f.type.startsWith("video/")){say("Please select a supported video file.");return;}if(sourceUrl)URL.revokeObjectURL(sourceUrl);sourceUrl=URL.createObjectURL(f);video.src=sourceUrl;video.load();$("videoMeta").textContent=f.name;empty.classList.add("hidden");$("analyzeBtn").disabled=false;exportBtn.disabled=true;$("analysisStatus").textContent="Video loaded. Choose the analysis scope and scan.";});
+ video.addEventListener("loadedmetadata",()=>{const d=video.duration||15;start.value="0";end.value=Math.min(15,d).toFixed(1);[sr,er].forEach(r=>r.max=d);er.value=end.value;clampTimes();exportBtn.disabled=false;});
+ $("setStart").addEventListener("click",()=>{start.value=video.currentTime.toFixed(1);clampTimes();});$("setEnd").addEventListener("click",()=>{end.value=video.currentTime.toFixed(1);clampTimes();});
+ function parseSrt(text){const normalized=text.replace(/\r/g,"").trim();return normalized.split(/\n{2,}/).map(block=>{const lines=block.split("\n"),ix=lines.findIndex(x=>x.includes("-->"));if(ix<0)return null;const parts=lines[ix].split("-->").map(x=>x.trim().split(/\s+/)[0]);const toSec=s=>{const m=s.match(/(?:(\d+):)?(\d{2}):(\d{2})[,.](\d{3})/);return m?(+m[1]||0)*3600+(+m[2])*60+(+m[3])+(+m[4])/1000:null;};const a=toSec(parts[0]),b=toSec(parts[1]);return a!==null&&b!==null?{start:a,end:b,text:lines.slice(ix+1).join(" ").replace(/<[^>]*>/g,"").trim()}:null;}).filter(x=>x&&x.text&&x.end>x.start);}
+ $("srtFile").addEventListener("change",async e=>{const f=e.target.files?.[0];if(!f)return;try{subtitleCues=parseSrt(await f.text());$("srtStatus").textContent=`Loaded ${subtitleCues.length} timed subtitle cues.`;}catch{$("srtStatus").textContent="Could not read that subtitle file.";subtitleCues=[];}});
+ $("analyzeBtn").addEventListener("click",async()=>{const f=fileInput.files?.[0];if(!f)return;const d=video.duration;if(!Number.isFinite(d)||d<=0){$("analysisStatus").textContent="Video duration is not available.";return;}const scope=$("analysisScope").value;let from=scope==="range"?Number(start.value):0,to=scope==="range"?Number(end.value):d;if(!(to>from)){ $("analysisStatus").textContent="Choose a valid time range first.";return;}const btn=$("analyzeBtn");btn.disabled=true;btn.textContent="Scanning audio…";$("candidateList").innerHTML="";try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw Error("Web Audio is unavailable in this browser.");audioContext=audioContext||new Ctx();const buffer=await f.arrayBuffer();const audio=await audioContext.decodeAudioData(buffer);const channel=audio.getChannelData(0),rate=audio.sampleRate,windowSize=Math.max(1,Math.floor(rate*.5)),step=Math.max(1,Math.floor(rate*.25));let peaks=[];for(let i=Math.floor(from*rate);i<Math.min(channel.length,to*rate);i+=step){let sum=0,n=Math.min(windowSize,channel.length-i);for(let j=0;j<n;j+=4)sum+=channel[i+j]*channel[i+j];const rms=Math.sqrt(sum/Math.max(1,Math.ceil(n/4)));peaks.push({time:i/rate,score:rms});}if(!peaks.length)throw Error("No audio samples found in that range.");const sorted=[...peaks].sort((a,b)=>b.score-a.score),len=Number($("candidateLength").value),chosen=[];for(const p of sorted){const a=Math.max(from,Math.min(to-len,p.time-len/2));if(chosen.every(x=>Math.abs(x.start-a)>len*.7)){chosen.push({start:a,end:Math.min(to,a+len),score:p.score});if(chosen.length===5)break;}}chosen.sort((a,b)=>b.score-a.score);if(!chosen.length)throw Error("No candidate windows found. Try a shorter clip length.");const list=$("candidateList");chosen.forEach((c,i)=>{const row=document.createElement("div");row.className="candidate";const info=document.createElement("div"),strong=document.createElement("strong"),small=document.createElement("small"),use=document.createElement("button");strong.textContent=`Moment ${i+1} · ${fmt(c.start)}–${fmt(c.end)}`;small.textContent=`Relative audio peak: ${(c.score*100).toFixed(1)}%`;info.append(strong,small);use.className="secondary";use.textContent="Use clip";use.addEventListener("click",()=>{start.value=c.start.toFixed(1);end.value=c.end.toFixed(1);clampTimes();video.currentTime=c.start;document.getElementById("editorPanel").scrollIntoView({behavior:"smooth"});});row.append(info,use);list.append(row);});$("analysisStatus").textContent=`Found ${chosen.length} candidate windows from local audio peaks. Listen before using them.`;}catch(err){$("analysisStatus").textContent=`Analysis unavailable: ${err.message||"try a shorter/supported file"}`;}finally{btn.disabled=false;btn.textContent="Analyze audio for standout moments";}});
+ function drawCaption(ctx,text,w,h){if(!text)return;const fs=Math.max(24,Math.round(w*.052)),max=w*.86;ctx.font=`800 ${fs}px system-ui`;const words=text.split(/\s+/),lines=[];let line="";for(const word of words){const test=line?line+" "+word:word;if(ctx.measureText(test).width>max&&line){lines.push(line);line=word;}else line=test;}if(line)lines.push(line);const shown=lines.slice(-3),style=$("captionStyle").value;ctx.textAlign="center";ctx.textBaseline="middle";shown.forEach((t,i)=>{const y=h*.82+(i-(shown.length-1)/2)*fs*1.25;if(style==="box"){const tw=ctx.measureText(t).width;ctx.fillStyle="#05070bdc";ctx.fillRect((w-tw)/2-fs*.35,y-fs*.7,tw+fs*.7,fs*1.4);ctx.fillStyle="#fff";ctx.fillText(t,w/2,y);}else{ctx.lineWidth=Math.max(4,fs*.16);ctx.strokeStyle="#111";ctx.fillStyle="#fff";ctx.strokeText(t,w/2,y);ctx.fillText(t,w/2,y);}});}
+ function drawTimedCues(ctx,w,h,time){const cue=subtitleCues.find(c=>time>=c.start&&time<=c.end);if(cue)drawCaption(ctx,cue.text,w,h);}
+ exportBtn.addEventListener("click",async()=>{if(!video.src||recording)return;const a=Number(start.value),b=Number(end.value);if(!(b>a)||b-a>180){say("Choose a valid clip up to 3 minutes for this mobile browser version.");return;}if(!window.MediaRecorder){say("This browser does not support local recording.");return;}const portrait=$("layout").value==="portrait",canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");canvas.width=portrait?720:(video.videoWidth||1280);canvas.height=portrait?1280:(video.videoHeight||720);let raf=0;const staticCaption=$("caption").value.trim();const draw=()=>{if(!recording)return;const vw=video.videoWidth||16,vh=video.videoHeight||9,tr=canvas.width/canvas.height,sr=vw/vh;let sx=0,sy=0,sw=vw,sh=vh;if(sr>tr){sw=vh*tr;sx=(vw-sw)/2;}else{sh=vw/tr;sy=(vh-sh)/2;}ctx.fillStyle="#000";ctx.fillRect(0,0,canvas.width,canvas.height);try{ctx.drawImage(video,sx,sy,sw,sh,0,0,canvas.width,canvas.height);}catch{}if(subtitleCues.length)drawTimedCues(ctx,canvas.width,canvas.height,video.currentTime);else drawCaption(ctx,staticCaption,canvas.width,canvas.height);raf=requestAnimationFrame(draw);};const stream=canvas.captureStream(30);const audioStream=video.captureStream?.()||video.mozCaptureStream?.();if(audioStream)audioStream.getAudioTracks().forEach(t=>stream.addTrack(t));const mime=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find(t=>MediaRecorder.isTypeSupported(t))||"";let rec;try{rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);}catch{say("This browser could not start export.");stream.getTracks().forEach(t=>t.stop());return;}const chunks=[];rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data);};rec.onerror=()=>{recording=false;cancelAnimationFrame(raf);say("Export failed. Try a shorter clip.");};rec.onstop=()=>{recording=false;cancelAnimationFrame(raf);stream.getTracks().forEach(t=>t.stop());if(exportUrl)URL.revokeObjectURL(exportUrl);const blob=new Blob(chunks,{type:rec.mimeType||"video/webm"});exportUrl=URL.createObjectURL(blob);download.href=exportUrl;download.classList.remove("hidden");download.textContent=`Download clip (${(blob.size/1048576).toFixed(1)} MB · WebM)`;exportBtn.disabled=false;exportBtn.textContent="Export selected clip";say("Export ready. Download it to your device.");};exportBtn.disabled=true;exportBtn.textContent="Exporting…";download.classList.add("hidden");say("Exporting locally. Keep this tab open.");video.pause();recording=true;const seek=()=>new Promise(resolve=>{if(Math.abs(video.currentTime-a)<.05)return resolve();const done=()=>{video.removeEventListener("seeked",done);resolve();};video.addEventListener("seeked",done);video.currentTime=a;});await seek();draw();rec.start(250);try{await video.play();}catch{rec.stop();say("Tap play permission or try again.");return;}const stop=()=>{if(video.currentTime>=b||video.ended){video.pause();video.removeEventListener("timeupdate",stop);if(rec.state!=="inactive")rec.stop();}};video.addEventListener("timeupdate",stop);});
+ $("generateTextBtn").addEventListener("click",()=>{const topic=$("topic").value.trim()||"this moment";const title=`${topic} 😳`;const desc=`Watch this moment: ${topic}. #Shorts`;const tags=["#Shorts","#Gaming","#Clips",...topic.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).slice(0,2).map(x=>"#"+x)].join(" ");$("suggestedTitle").value=title;$("suggestedDescription").value=desc;$("suggestedTags").value=tags;$("postSuggestions").classList.remove("hidden");});
+ $("copyPostBtn").addEventListener("click",async()=>{const text=`${$("suggestedTitle").value}\n\n${$("suggestedDescription").value}\n\n${$("suggestedTags").value}`;try{await navigator.clipboard.writeText(text);$("copyPostBtn").textContent="Copied!";}catch{$("copyPostBtn").textContent="Copy unavailable in this browser";}});
+ window.addEventListener("beforeunload",()=>{if(sourceUrl)URL.revokeObjectURL(sourceUrl);if(exportUrl)URL.revokeObjectURL(exportUrl);if(audioContext)audioContext.close();});
 })();
