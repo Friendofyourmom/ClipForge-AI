@@ -1,22 +1,20 @@
-# ClipForge AI — consolidated free-first browser build
+# ClipForge AI — Editing Workspace Batch 2
 
-## Included in this batch
-- Responsive dark mobile-first interface.
-- YouTube and Twitch link recognition with official embedded preview.
-- Local upload of creator-authorized video files.
-- Full-video or selected-range local audio analysis that suggests up to five candidate windows based on audio peaks.
-- Manual start/end trimming and 9:16 center crop.
-- Static caption burn-in and timed `.srt` subtitle burn-in when browser export supports it.
-- Topic-based title, description and hashtag templates with copy action.
-- Local WebM export using MediaRecorder.
+## New in this batch
+- Audio waveform overview generated locally from the selected file.
+- Timeline selection overview linked to the existing start/end trim fields.
+- Multi-clip queue: save multiple time ranges, select one to edit, or remove it.
+- Subtitle cue builder: add timed text cues, review/remove them, and download a standard `.srt` file.
+- The generated SRT can be loaded into the existing timed-subtitle input and burned into a WebM export where browser support permits.
+- Existing link preview, local audio peak analysis, crop, captions, post-text templates and WebM export are preserved.
 
-## Important limitations
-- Link preview is not downloading or ingesting a VOD. This static GitHub Pages app cannot fetch arbitrary YouTube/Twitch media. Use a file you are authorized to edit and obtain it through an authorized source.
-- The “moment finder” is a local audio-loudness heuristic, not semantic AI. It cannot identify jokes, gameplay events, conversations or meaning. Review candidates manually.
-- Post text is generated from the topic you type, not from video understanding.
-- Export is WebM, not MP4. Browser/device codec support and memory limits vary; long/high-resolution exports may fail on Android.
-- Automatic speech recognition, semantic AI highlight ranking, direct VOD processing, reliable MP4 conversion and cloud processing are not included. They require additional processing infrastructure and, for platform media, authorized access.
-- No DRM, access-control or platform restriction bypass is provided.
+## Honest limitations
+- The queue stores clip ranges only for the current browser session. It does not batch-export all clips automatically.
+- Waveform is a visual audio-amplitude overview, not AI transcription or semantic understanding.
+- The subtitle cue builder requires manual text entry; it does not perform speech recognition.
+- Export remains WebM, not MP4. Device/browser codec and memory limits apply.
+- YouTube/Twitch URLs remain embedded previews, not downloadable VOD sources.
+- Use only videos you own or are authorized to edit. This app does not bypass platform access controls.
 
 ## Install
-Replace `index.html`, `style.css`, `app.js`, `link-import.js`, and `README.md` in the repository root with the files in this package. Then wait for GitHub Pages to redeploy and refresh the site. No API keys are required for these local features.
+Replace `index.html` and `style.css`, keep your existing `app.js` and `link-import.js` unchanged, and add `editor-workspace.js` to the repository root. The `index.html` in this package loads the new script after the existing scripts.

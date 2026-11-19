@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b12"><title>ClipForge AI — Free VOD Clipper</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <header class="topbar"><div class="brand"><span class="logo">✦</span><span>ClipForge <b>AI</b></span></div><span class="free-pill">FREE • LOCAL PROCESSING</span></header>
@@ -23,7 +23,7 @@
 <section class="panel" id="editorPanel"><div class="section-head"><div><span class="step">03</span><h2>Find interesting moments</h2></div><span class="muted" id="videoMeta">No video loaded</span></div>
 <div class="analysis-controls"><label>Analyze<select id="analysisScope"><option value="full">Entire video</option><option value="range">Selected time range</option></select></label><label>Candidate clip length<select id="candidateLength"><option value="20">20 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option></select></label></div>
 <button class="primary full" id="analyzeBtn" disabled>Analyze audio for standout moments</button>
-<p class="notice">This free local scan looks for unusually loud audio peaks. It is a rough highlight-finding aid, not semantic AI: it cannot know whether a moment is funny, exciting or important.</p>
+<p class="notice">This free local scan looks for unusually loud audio peaks. It is a rough highlight-finding aid, not semantic AI.</p>
 <div id="analysisStatus" class="status" aria-live="polite">Upload a video to enable local analysis.</div><div id="candidateList" class="candidate-list"></div>
 </section>
 <section class="panel"><div class="section-head"><div><span class="step">04</span><h2>Choose and edit your clip</h2></div></div>
@@ -45,5 +45,5 @@
 </section>
 <section class="panel roadmap"><div class="section-head"><div><span class="step">07</span><h2>What this version can and cannot do</h2></div></div><ul><li>Local audio-peak candidate suggestions</li><li>Manual clip trimming and vertical crop</li><li>Static captions and imported timed SRT subtitles</li><li>Local WebM export where your browser supports it</li><li>Platform VOD downloading, semantic AI analysis, automatic speech recognition and MP4 conversion require additional services or native processing tools.</li></ul></section>
 </main><footer>ClipForge AI · Free-first · Use only videos you are authorized to edit</footer>
-<script src="link-import.js"></script><script src="app.js"></script>
+<script src="link-import.js"></script><script src="app.js"></script><script src="editor-workspace.js"></script>
 </body></html>
