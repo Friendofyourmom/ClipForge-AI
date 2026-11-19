@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b12"><title>ClipForge AI — Free VOD Clipper</title>
+<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="batch3.css?v=1">
+</head>
+<body>
+<header class="topbar"><div class="brand"><span class="logo">✦</span><span>ClipForge <b>AI</b></span></div><span class="free-pill">FREE • LOCAL PROCESSING</span></header>
+<main>
+<section class="hero"><p class="eyebrow">YOUR MOMENTS. YOUR EDIT.</p><h1>Turn long videos into<br><span>shareable moments.</span></h1><p class="sub">A free-first clip editor for creator-authorized videos. Analyze, select, caption and export clips directly in your browser.</p></section>
+<section class="panel" id="linkImportPanel">
+<div class="section-head"><div><span class="step">01</span><h2>Import a YouTube / Twitch link</h2></div><span class="muted">Official preview</span></div>
+<label for="videoUrl">Paste a YouTube video, Twitch VOD or Twitch clip link</label><input id="videoUrl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=...">
+<div class="import-actions"><button class="primary" id="previewLinkBtn" type="button">Preview link</button><button class="secondary" id="clearLinkBtn" type="button">Clear</button></div>
+<div id="linkStatus" class="status" aria-live="polite">Paste a supported link to preview it here.</div>
+<div id="embedWrap" class="embed-wrap hidden"><iframe id="videoEmbed" title="Video preview" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+<div id="linkNextStep" class="link-next hidden"><strong>Preview only — not a downloadable source.</strong><p>Use a recording you own or are authorized to edit. Obtain it through the creator's authorized source or platform tools, then upload it below. No restriction bypassing.</p><button class="secondary" id="goToUploadBtn" type="button">Choose an authorized video file</button></div>
+<p class="notice">A platform link can be previewed but cannot be imported as raw video by this static site.</p>
+</section>
+<section class="panel"><div class="section-head"><div><span class="step">02</span><h2>Choose your video</h2></div><span class="muted">Local file</span></div>
+<label class="dropzone" for="videoFile" id="dropzone"><span class="upload-icon">↑</span><strong>Tap to select a video</strong><span class="muted">Choose a video stored on your phone</span><input id="videoFile" type="file" accept="video/*"></label><p class="notice">Your selected file stays in this browser tab; avoid leaving the page during analysis or export.</p></section>
+<section class="panel" id="editorPanel"><div class="section-head"><div><span class="step">03</span><h2>Find interesting moments</h2></div><span class="muted" id="videoMeta">No video loaded</span></div>
+<div class="analysis-controls"><label>Analyze<select id="analysisScope"><option value="full">Entire video</option><option value="range">Selected time range</option></select></label><label>Candidate clip length<select id="candidateLength"><option value="20">20 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option></select></label></div>
+<button class="primary full" id="analyzeBtn" disabled>Analyze audio for standout moments</button><p class="notice">This free local scan looks for unusually loud audio peaks. It is a rough highlight-finding aid, not semantic AI.</p>
+<div id="analysisStatus" class="status" aria-live="polite">Upload a video to enable local analysis.</div><div id="candidateList" class="candidate-list"></div></section>
+<section class="panel"><div class="section-head"><div><span class="step">04</span><h2>Choose and edit your clip</h2></div></div>
+<div class="preview-wrap"><video id="preview" controls playsinline></video><div class="empty-preview" id="emptyPreview"><span>▶</span><p>Your uploaded video preview appears here</p></div></div>
+<div class="time-grid"><label>Start time (seconds)<input id="startTime" type="number" min="0" step="0.1" value="0"></label><label>End time (seconds)<input id="endTime" type="number" min="0" step="0.1" value="15"></label></div>
+<div class="range-row"><input id="startRange" type="range" min="0" max="15" step="0.1" value="0"><input id="endRange" type="range" min="0" max="15" step="0.1" value="15"></div>
+<div class="quick-actions"><button class="secondary" id="setStart">Set start to current time</button><button class="secondary" id="setEnd">Set end to current time</button></div>
+<div class="section-head subhead"><div><span class="step">05</span><h2>Format and captions</h2></div></div>
+<div class="options-grid"><label>Layout<select id="layout"><option value="portrait">Vertical 9:16</option><option value="original">Keep original shape</option></select></label><label>Caption style<select id="captionStyle"><option value="bold">Bold outlined</option><option value="box">Dark caption box</option></select></label></div>
+<label class="field-gap" for="caption">Static caption (optional)</label><input id="caption" type="text" maxlength="160" placeholder="Add a short title or hook">
+<label class="field-gap" for="srtFile">Timed subtitles (optional .srt file)</label><input id="srtFile" type="file" accept=".srt,text/plain"><p id="srtStatus" class="status">No subtitle file loaded. You can still add a static caption.</p>
+<div class="section-head subhead"><div><span class="step">06</span><h2>Post details</h2></div></div>
+<label for="topic">What is this clip about?</label><input id="topic" type="text" maxlength="100" placeholder="e.g. clutch win, funny reaction, game name">
+<button class="secondary full" id="generateTextBtn" type="button">Suggest title, description and hashtags</button>
+<div id="postSuggestions" class="suggestions hidden"><label>Title<input id="suggestedTitle" readonly></label><label>Description<textarea id="suggestedDescription" rows="3" readonly></textarea></label><label>Hashtags<input id="suggestedTags" readonly></label><button class="secondary full" id="copyPostBtn" type="button">Copy post text</button></div>
+<p class="notice">Suggestions use your topic text and are templates, not AI-generated knowledge about the video.</p>
+<button class="primary full export-button" id="exportBtn" disabled>Export selected clip</button><p id="status" class="status" aria-live="polite">Choose a video to begin.</p><a id="downloadLink" class="download hidden" download="clipforge-clip.webm">Download your clip (WebM)</a></section>
+<section class="panel roadmap"><div class="section-head"><div><span class="step">07</span><h2>What this version can and cannot do</h2></div></div><ul><li>Local audio-peak candidate suggestions</li><li>Manual clip trimming and vertical crop</li><li>Static captions and imported timed SRT subtitles</li><li>Local WebM export where your browser supports it</li><li>Platform VOD downloading, semantic AI analysis and MP4 conversion are not included.</li></ul></section>
+</main><footer>ClipForge AI · Free-first · Use only videos you are authorized to edit</footer>
+<script src="link-import.js"></script><script src="app.js"></script><script src="editor-workspace.js"></script><script src="batch3.js"></script>
+</body></html>
